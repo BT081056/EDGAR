@@ -1,0 +1,116 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Tue Aug 18 15:59:10 2020
+
+@author: 2007020
+"""
+from PyQt5.QtWidgets import *
+from PyQt5.QtCore import *
+from PyQt5.QtGui import *
+
+import cv2
+import matplotlib.pyplot as plt
+import sys
+import pandas as pd
+from ui_MainWindow import Ui_MainWindow
+import threading
+import time
+# 影片檔案
+videoFile = r"C:\Users\JohnnyCCHuang\Desktop\A+暑期\MVI_1899.MOV"
+# 開啟影片檔
+
+
+
+class MainWindow(QMainWindow, Ui_MainWindow):
+#    @pyqtSlot(QImage)
+    def __init__(self):
+        super(MainWindow,self).__init__()
+        Ui_MainWindow.__init__(self)
+        self.setupUi(self)
+        
+        self.work = WorkThread()
+        self.start_btn.clicked.connect(self.execute)
+        self.close_btn.clicked.connect(QCoreApplication.instance().quit)
+
+    def execute(self):
+        # 啟動執行緒
+        self.work.start()
+        # 執行緒自定義訊號連線的槽函式
+#        self.work.trigger.connect(self.display)
+        self.work.sig_new_image.connect(self.display)
+        
+    def display(self,QImage):
+        # 由於自定義訊號時自動傳遞一個字串引數，所以在這個槽函式中要接受一個引數
+#        self.listWidget.addItem(str)
+        self.img_output.setPixmap(QPixmap.fromImage(QImage))
+
+        
+class WorkThread(QThread):
+    # 自定義訊號物件。引數str就代表這個訊號可以傳一個字串
+    sig_new_image = pyqtSignal(QImage)
+    
+    def __int__(self):
+        # 初始化函式
+        super(WorkThread, self).__init__()
+
+    def run(self):
+        #重寫執行緒執行的run函式
+        #觸發自定義訊號
+        
+        
+        while True:
+            ret, frame = cv2.VideoCapture(videoFile).read()
+            time.sleep(0.04)
+            # 通過自定義訊號把待顯示的字串傳遞給槽函式
+#            self.trigger.emit(str(1))
+            cv2.cvtColor(frame, cv2.COLOR_BGR2RGB,frame)
+            # 轉為QImage物件
+            self.image = QImage(frame, frame.shape[1], frame.shape[0], QImage.Format_Grayscale8)
+            self.sig_new_image.emit(self.image)
+#            self.img_output.setPixmap(QPixmap.fromImage(self.image))
+            
+            
+#    def showCamer(self):
+#        if self.device.isOpened():
+#            ret, frame = self.device.read()
+#        else:
+#            ret = False
+#            height, width, bytesPerComponent = frame.shape
+#            bytesPerLine = bytesPerComponent * width
+#            # 變換彩色空間順序
+#            cv2.cvtColor(frame, cv2.COLOR_BGR2RGB,frame)
+#            # 轉為QImage物件
+#            self.image = QImage(frame.data, width, height, bytesPerLine, QImage.Format_RGB888)
+#            self.img_output.setPixmap(QPixmap.fromImage(self.image))
+
+
+#
+#class Timer(QThread):
+#    IMG = pyqtSignal(QImage)
+#    
+#    def __int__(self):
+#        # 初始化函式
+#        super(Timer, self).__init__()
+#
+#    def run(self):
+#        #重寫執行緒執行的run函式
+#        #觸發自定義訊號
+#        
+#        for i in range(20):
+#            ret, frame = cv2.VideoCapture(videoFile).read()
+#            time.sleep(1)
+#            height, width, bytesPerComponent = frame.shape
+#            bytesPerLine = bytesPerComponent * width
+#            # 變換彩色空間順序
+#            cv2.cvtColor(frame, cv2.COLOR_BGR2RGB,frame)
+#            # 轉為QImage物件
+#
+#            self.IMG.emit(frame)
+
+        
+    
+if __name__=='__main__':
+    app=QApplication(sys.argv)
+    window=MainWindow()
+    window.show()
+    sys.exit(app.exec())
