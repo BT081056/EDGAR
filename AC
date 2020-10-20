@@ -1,0 +1,88 @@
+## -*- coding: utf-8 -*-
+#"""
+#Created on Tue Sep 22 13:46:24 2020
+#邊緣&填滿https://www.itread01.com/content/1547184614.html
+#@author: JohnnyCCHuang
+#"""
+
+import cv2
+import numpy as np
+from imutils import perspective
+from imutils import contours
+import imutils
+import glob
+import time
+Dir = r'C:\Users\JohnnyCCHuang\Desktop\AIA\IMT_BigYellow\*.jpg'
+Plist = glob.glob(Dir)
+path = r'C:\Users\JohnnyCCHuang\Desktop\AIA\IMT_BigYellow\2020-07-17-17_16_44.jpg'
+path = r'C:\Users\JohnnyCCHuang\Desktop\AIA\IMT_BigYellow\2020-07-17-15_56_15.jpg'
+
+tStart=time.time()
+
+
+imgR = cv2.imread(path)
+img = cv2.cvtColor(imgR,cv2.COLOR_BGR2HSV)
+
+lower = np.array([0,60,110])
+upper = np.array([40,255,255])
+# 获得指定颜色范围内的掩码
+mask = cv2.inRange(img,lower,upper)
+# 对原图图像进行按位与的操作，掩码区域保留
+imgResult = cv2.bitwise_and(img,img,mask=mask)
+
+img2 = cv2.cvtColor(imgResult,cv2.COLOR_BGR2GRAY)
+ret,thresh = cv2.threshold(img2,100,255,cv2.THRESH_BINARY)
+
+contours, _ = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+
+area = []
+for k in range(len(contours)):
+	area.append((k,contours[k].shape[0]))
+
+np.argmax(area,1)
+area.sort(key=lambda score: score[1])
+index,_ = area[-3]
+
+#cv2.contourArea(contours[-1])
+temp = np.zeros(img.shape,np.uint8)*255
+#畫出輪廓：temp是白色幕布，contours是輪廓，-1表示全畫，然後是顏色，厚度
+mask2 = cv2.drawContours(temp, contours, index, (1,1,1), cv2.FILLED)
+
+GRAY = cv2.cvtColor(mask2,cv2.COLOR_BGR2GRAY)
+#垂直投影
+Xlist = []
+XAxis = []
+for h in range(0,GRAY.shape[0]):
+    Xlist.append(np.sum(GRAY[h,:]))
+    if np.sum(GRAY[h,:]) > 1:
+        XAxis.append(h)
+#水平投影
+Ylist = []
+YAxis = []
+for w in range(0,GRAY.shape[1]):
+    Ylist.append(np.sum(GRAY[:,w]))
+    if np.sum(GRAY[:,w]) > 1:
+        YAxis.append(w)
+
+yy = np.argmax(Xlist)
+xx = np.argmax(Ylist)
+Rels2 = imgR.copy()
+yValue = Xlist[yy]
+xValue = Ylist[xx]
+##cv2.line(影像, 開始座標, 結束座標, 顏色, 線條寬度)
+
+cv2.line(Rels2,(YAxis[1],yy) , (YAxis[-1],yy), (0, 0, 255), 5)
+cv2.line(Rels2,(xx,XAxis[1]) , (xx,XAxis[-1]), (0, 255, 0), 5)
+
+###cv2.putText(影像, 文字, 座標, 字型, 大小, 顏色, 線條寬度, 線條種類)
+text = 'R:%i G:%i'%(yValue,xValue)
+cv2.putText(Rels2, text, (200, 300), cv2.FONT_HERSHEY_PLAIN,5, (0, 255, 255), 5, cv2.LINE_AA)
+
+immm = Rels2
+RRRR = cv2.resize(immm,(int(immm.shape[1]*0.5),int(immm.shape[0]*0.5)))
+
+cv2.imshow("Result4", Rels2)
+cv2.waitKey(1)
+
+tEnd=time.time()
+print('It cost %2f sec' %(tEnd-tStart))
