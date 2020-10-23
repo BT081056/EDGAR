@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 Created on Tue Aug 18 15:59:10 2020
-
+##登入ui Exp https://www.itread01.com/content/1550086415.html
 @author: 2007020
 """
 from PyQt5.QtWidgets import *
@@ -94,16 +94,19 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.work.changePixmap.connect(self.img_output.setPixmap)
         
         self.start_btn.clicked.connect(self.execute)
-        self.close_btn.clicked.connect(QCoreApplication.instance().quit)
+#        self.close_btn.clicked.connect(QCoreApplication.instance().quit)
+        self.close_btn.clicked.connect(self.Checkstop)
 
     def execute(self):
         # 啟動執行緒
-        
         self.thread = Check()
         self.thread.file_changed_signal.connect(self.update_file_list)
         self.start_btn.setEnabled(False)
         self.thread.start()
 
+    def Checkstop(self):
+        self.start_btn.setEnabled(True)
+        self.thread.stop()
       
     def update_file_list(self, file_inf):
         self.VALUE.setText(str(file_inf))
@@ -111,11 +114,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if file_inf >= 3 and SW == GPIO.HIGH :
          Value = BigYellow(self,self.work.getframe())
          if Value >= spec:
-          GPIO.output(LED_R,GPIO.HIGH)
-          GPIO.output(LED_G,GPIO.LOW)
+          self.RGB.setPixmap(QPixmap('RED.jpg'))
+          self.RGB.setScaledContents(True)
          else:
-          GPIO.output(LED_G,GPIO.HIGH)
-          GPIO.output(LED_R,GPIO.LOW)
+          self.RGB.setPixmap(QPixmap('GREED.jpg'))
+          self.RGB.setScaledContents(True)
          self.img_output_2.setPixmap(QPixmap('Result.jpg'))
          self.img_output_2.setScaledContents(True)
 
